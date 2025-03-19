@@ -21,8 +21,10 @@
           class="task-list">
           <div v-for="task in section.tasks" :key="task.id" class="task-item">
             <p class="task-item-text">{{ task.text }}</p>
+
+            <!-- Кнопка вызова контексного меню -->
             <button
-              @click="showContextMenu(task.id, section.id)"
+              @click="showContextMenu(task.id, section.id, $event)"
               class="task-item__menu-btn"
               :ref="`menuButton-${task.id}`">
               <svg width="21" height="20" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -132,18 +134,41 @@ export default {
     },
 
     // Показать/скрыть контекстное меню
-    showContextMenu(taskId, sectionId) {
-      if (
+    showContextMenu(taskId, sectionId, event) {
+      // Показываем меню
+      this.activeContextMenu = { taskId, sectionId };
+
+      // Ждем обновления DOM
+      this.$nextTick(() => {
+        const button = event.target; // Кнопка, которая открывает меню
+        const menuRef = this.$refs[`contextMenu-${taskId}`];
+
+        // Проверяем, что элемент существует
+        if (!menuRef || !menuRef[0]) {
+          console.error("Контекстное меню не найдено");
+          return;
+        }
+
+        const menu = menuRef[0]; // Контекстное меню
+
+        // Получаем координаты кнопки
+        const rect = button.getBoundingClientRect();
+        console.log(rect)
+
+        // Позиционируем меню относительно кнопки
+        menu.style.top = `${rect.bottom}px`; // Позиция ниже кнопки
+        menu.style.left = `${rect.left}px`; // Позиция по горизонтали
+      });
+
+      /* if (
         this.activeContextMenu &&
         this.activeContextMenu.taskId === taskId &&
         this.activeContextMenu.sectionId === taskId
       ) {
-        // Если меню уже открыто, закрыть его
         this.activeContextMenu = null;
       } else {
-        // Если нет, открыть его
         this.activeContextMenu = { taskId, sectionId };
-      }
+      } */
     },
 
     // Отображение модального окна для удаления задачи
@@ -323,10 +348,7 @@ export default {
 }
 
 .context-menu {
-  position: absolute;
-  top: 31px;
-  right: 24px;
-  transform: translateX(100%);
+  position: fixed;
   border-radius: 4px;
   z-index: 10;
   padding: 8px 0;
